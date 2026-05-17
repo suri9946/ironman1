@@ -1,0 +1,1788 @@
+/*========================================================
+            LIBRARY DATABASE COMPLETE SQL PROGRAM
+========================================================*/
+
+/*========================================================
+                    CREATE DATABASE
+========================================================*/
+
+CREATE DATABASE LibraryDB;
+
+USE LibraryDB;
+
+
+/*========================================================
+                    CREATE TABLES
+========================================================*/
+
+
+/*-------------------- PUBLISHER --------------------*/
+
+CREATE TABLE PUBLISHER
+(
+    Name VARCHAR(50) PRIMARY KEY,
+    Address VARCHAR(100),
+    Phone BIGINT
+);
+
+
+/*-------------------- BOOK --------------------*/
+
+CREATE TABLE BOOK
+(
+    Book_id INT PRIMARY KEY,
+    Title VARCHAR(100),
+    Publisher_Name VARCHAR(50),
+    Pub_Year INT,
+
+    FOREIGN KEY (Publisher_Name)
+    REFERENCES PUBLISHER(Name)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- BOOK_AUTHORS --------------------*/
+
+CREATE TABLE BOOK_AUTHORS
+(
+    Book_id INT,
+    Author_Name VARCHAR(50),
+
+    FOREIGN KEY (Book_id)
+    REFERENCES BOOK(Book_id)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- LIBRARY_PROGRAMME --------------------*/
+
+CREATE TABLE LIBRARY_PROGRAMME
+(
+    Programme_id INT PRIMARY KEY,
+    Programme_Name VARCHAR(100),
+    Address VARCHAR(100)
+);
+
+
+/*-------------------- BOOK_COPIES --------------------*/
+
+CREATE TABLE BOOK_COPIES
+(
+    Book_id INT,
+    Programme_id INT,
+    Noof_Copies INT,
+
+    FOREIGN KEY (Book_id)
+    REFERENCES BOOK(Book_id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (Programme_id)
+    REFERENCES LIBRARY_PROGRAMME(Programme_id)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- BOOK_LENDING --------------------*/
+
+CREATE TABLE BOOK_LENDING
+(
+    Book_id INT,
+    Programme_id INT,
+    Card_No INT,
+    Date_Out DATE,
+    Due_Date DATE,
+
+    FOREIGN KEY (Book_id)
+    REFERENCES BOOK(Book_id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (Programme_id)
+    REFERENCES LIBRARY_PROGRAMME(Programme_id)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+                    INSERT RECORDS
+        (MINIMUM 5 RECORDS IN EACH TABLE)
+========================================================*/
+
+
+/*-------------------- PUBLISHER --------------------*/
+
+INSERT INTO PUBLISHER VALUES
+('Pearson','Delhi',9876543210);
+
+INSERT INTO PUBLISHER VALUES
+('McGraw Hill','Mumbai',9123456780);
+
+INSERT INTO PUBLISHER VALUES
+('Oxford','Bangalore',9988776655);
+
+INSERT INTO PUBLISHER VALUES
+('Springer','Chennai',9871234567);
+
+INSERT INTO PUBLISHER VALUES
+('Wiley','Hyderabad',9012345678);
+
+
+/*-------------------- BOOK --------------------*/
+
+INSERT INTO BOOK VALUES
+(1,'Database Management System','Pearson',2017);
+
+INSERT INTO BOOK VALUES
+(2,'Operating System','McGraw Hill',2016);
+
+INSERT INTO BOOK VALUES
+(3,'Computer Networks','Oxford',2018);
+
+INSERT INTO BOOK VALUES
+(4,'Data Structures','Springer',2015);
+
+INSERT INTO BOOK VALUES
+(5,'Machine Learning','Wiley',2019);
+
+
+/*-------------------- BOOK_AUTHORS --------------------*/
+
+INSERT INTO BOOK_AUTHORS VALUES
+(1,'Korth');
+
+INSERT INTO BOOK_AUTHORS VALUES
+(2,'Galvin');
+
+INSERT INTO BOOK_AUTHORS VALUES
+(3,'Tanenbaum');
+
+INSERT INTO BOOK_AUTHORS VALUES
+(4,'Seymour Lipschutz');
+
+INSERT INTO BOOK_AUTHORS VALUES
+(5,'Tom Mitchell');
+
+
+/*-------------------- LIBRARY_PROGRAMME --------------------*/
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(101,'CSE Library','Block A');
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(102,'ISE Library','Block B');
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(103,'ECE Library','Block C');
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(104,'EEE Library','Block D');
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(105,'MECH Library','Block E');
+
+
+/*-------------------- BOOK_COPIES --------------------*/
+
+INSERT INTO BOOK_COPIES VALUES
+(1,101,5);
+
+INSERT INTO BOOK_COPIES VALUES
+(2,102,3);
+
+INSERT INTO BOOK_COPIES VALUES
+(3,103,4);
+
+INSERT INTO BOOK_COPIES VALUES
+(4,104,6);
+
+INSERT INTO BOOK_COPIES VALUES
+(5,105,2);
+
+
+/*-------------------- BOOK_LENDING --------------------*/
+
+INSERT INTO BOOK_LENDING VALUES
+(1,101,1001,'2017-01-10','2017-01-20');
+
+INSERT INTO BOOK_LENDING VALUES
+(2,102,1001,'2017-02-15','2017-02-25');
+
+INSERT INTO BOOK_LENDING VALUES
+(3,103,1001,'2017-03-05','2017-03-15');
+
+INSERT INTO BOOK_LENDING VALUES
+(4,104,1001,'2017-04-12','2017-04-22');
+
+INSERT INTO BOOK_LENDING VALUES
+(5,105,1002,'2017-05-01','2017-05-11');
+
+
+/*========================================================
+                        QUERY 1
+Retrieve details of all books in the library
+========================================================*/
+
+SELECT
+B.Book_id,
+B.Title,
+B.Publisher_Name,
+BA.Author_Name,
+BC.Noof_Copies,
+LP.Programme_Name
+
+FROM BOOK B
+
+JOIN BOOK_AUTHORS BA
+ON B.Book_id = BA.Book_id
+
+JOIN BOOK_COPIES BC
+ON B.Book_id = BC.Book_id
+
+JOIN LIBRARY_PROGRAMME LP
+ON BC.Programme_id = LP.Programme_id;
+
+
+/*========================================================
+                        QUERY 2
+Borrowers who borrowed more than 3 books
+between Jan 2017 and Jun 2017
+========================================================*/
+
+SELECT
+Card_No
+
+FROM BOOK_LENDING
+
+WHERE Date_Out BETWEEN '2017-01-01'
+AND '2017-06-30'
+
+GROUP BY Card_No
+
+HAVING COUNT(Book_id) > 3;
+
+
+/*========================================================
+                        QUERY 3
+Delete a book from BOOK table and update
+other tables automatically
+========================================================*/
+
+DELETE FROM BOOK
+WHERE Book_id = 3;
+
+
+/*-------------------- VERIFY DELETION --------------------*/
+
+SELECT * FROM BOOK;
+
+SELECT * FROM BOOK_AUTHORS;
+
+SELECT * FROM BOOK_COPIES;
+
+SELECT * FROM BOOK_LENDING;
+
+
+/*========================================================
+                        QUERY 4
+Partition BOOK table based on publication year
+========================================================*/
+
+
+/*-------------------- CREATE PARTITION TABLE --------------------*/
+
+CREATE TABLE BOOK_PARTITION
+(
+    Book_id INT,
+    Title VARCHAR(100),
+    Publisher_Name VARCHAR(50),
+    Pub_Year INT
+)
+
+PARTITION BY RANGE(Pub_Year)
+(
+    PARTITION p1 VALUES LESS THAN (2016),
+
+    PARTITION p2 VALUES LESS THAN (2018),
+
+    PARTITION p3 VALUES LESS THAN (2020)
+);
+
+
+/*-------------------- INSERT VALUES --------------------*/
+
+INSERT INTO BOOK_PARTITION VALUES
+(1,'DBMS','Pearson',2015);
+
+INSERT INTO BOOK_PARTITION VALUES
+(2,'Operating System','McGraw Hill',2017);
+
+INSERT INTO BOOK_PARTITION VALUES
+(3,'Machine Learning','Wiley',2019);
+
+
+/*-------------------- DISPLAY PARTITION DATA --------------------*/
+
+SELECT *
+FROM BOOK_PARTITION
+WHERE Pub_Year = 2019;
+
+
+/*========================================================
+                        QUERY 5
+Create a VIEW of all books and number
+of copies available in library
+========================================================*/
+
+CREATE VIEW BOOKS_AVAILABLE AS
+
+SELECT
+B.Book_id,
+B.Title,
+BC.Noof_Copies
+
+FROM BOOK B
+
+JOIN BOOK_COPIES BC
+ON B.Book_id = BC.Book_id;
+
+
+/*-------------------- DISPLAY VIEW --------------------*/
+
+SELECT * FROM BOOKS_AVAILABLE;
+
+
+
+
+/*========================================================
+            PROGRAM 2 – ORDER DATABASE
+==========================================================
+
+Aim:
+Discuss the various concepts on constraints
+and update operations.
+
+Schema:
+SALESMAN (Salesman_id, Name, City, Commission)
+
+CUSTOMER (Customer_id, Cust_Name, City,
+Grade, Salesman_id)
+
+ORDERS (Ord_No, Purchase_Amt, Ord_Date,
+Customer_id, Salesman_id)
+
+========================================================*/
+
+
+/*========================================================
+                    STEP 1
+                CREATE DATABASE
+========================================================*/
+
+CREATE DATABASE OrderDB;
+
+USE OrderDB;
+
+
+/*========================================================
+                    STEP 2
+                CREATE TABLES
+========================================================*/
+
+
+/*-------------------- SALESMAN --------------------*/
+
+CREATE TABLE SALESMAN
+(
+    Salesman_id INT PRIMARY KEY,
+    Name VARCHAR(50),
+    City VARCHAR(50),
+    Commission FLOAT
+);
+
+
+/*-------------------- CUSTOMER --------------------*/
+
+CREATE TABLE CUSTOMER
+(
+    Customer_id INT PRIMARY KEY,
+    Cust_Name VARCHAR(50),
+    City VARCHAR(50),
+    Grade INT,
+    Salesman_id INT,
+
+    FOREIGN KEY (Salesman_id)
+    REFERENCES SALESMAN(Salesman_id)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- ORDERS --------------------*/
+
+CREATE TABLE ORDERS
+(
+    Ord_No INT PRIMARY KEY,
+    Purchase_Amt FLOAT,
+    Ord_Date DATE,
+    Customer_id INT,
+    Salesman_id INT,
+
+    FOREIGN KEY (Customer_id)
+    REFERENCES CUSTOMER(Customer_id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (Salesman_id)
+    REFERENCES SALESMAN(Salesman_id)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+                    STEP 3
+                INSERT RECORDS
+        (MINIMUM 5 RECORDS IN EACH TABLE)
+========================================================*/
+
+
+/*-------------------- SALESMAN --------------------*/
+
+INSERT INTO SALESMAN VALUES
+(1000,'Ramesh','Bangalore',10);
+
+INSERT INTO SALESMAN VALUES
+(1001,'Suresh','Mysore',12);
+
+INSERT INTO SALESMAN VALUES
+(1002,'Mahesh','Chennai',15);
+
+INSERT INTO SALESMAN VALUES
+(1003,'Kiran','Hyderabad',11);
+
+INSERT INTO SALESMAN VALUES
+(1004,'Anil','Pune',13);
+
+
+/*-------------------- CUSTOMER --------------------*/
+
+INSERT INTO CUSTOMER VALUES
+(1,'Arun','Bangalore',100,1000);
+
+INSERT INTO CUSTOMER VALUES
+(2,'Varun','Mysore',200,1001);
+
+INSERT INTO CUSTOMER VALUES
+(3,'Kumar','Bangalore',300,1000);
+
+INSERT INTO CUSTOMER VALUES
+(4,'Sneha','Chennai',150,1002);
+
+INSERT INTO CUSTOMER VALUES
+(5,'Divya','Delhi',250,1003);
+
+
+/*-------------------- ORDERS --------------------*/
+
+INSERT INTO ORDERS VALUES
+(101,5000,'2023-01-10',1,1000);
+
+INSERT INTO ORDERS VALUES
+(102,7000,'2023-01-10',2,1001);
+
+INSERT INTO ORDERS VALUES
+(103,9000,'2023-01-11',3,1000);
+
+INSERT INTO ORDERS VALUES
+(104,6000,'2023-01-11',4,1002);
+
+INSERT INTO ORDERS VALUES
+(105,8000,'2023-01-12',5,1003);
+
+
+/*========================================================
+                DISPLAY TABLE CONTENTS
+========================================================*/
+
+SELECT * FROM SALESMAN;
+
+SELECT * FROM CUSTOMER;
+
+SELECT * FROM ORDERS;
+
+
+/*========================================================
+                    QUERY 1
+Count the customers with grades above
+Bangalore average
+========================================================*/
+
+SELECT COUNT(*)
+
+FROM CUSTOMER
+
+WHERE Grade >
+
+(
+    SELECT AVG(Grade)
+
+    FROM CUSTOMER
+
+    WHERE City='Bangalore'
+);
+
+
+/*========================================================
+                    QUERY 2
+Find the names and numbers of all salesman
+who had more than one customer
+========================================================*/
+
+SELECT
+S.Salesman_id,
+S.Name
+
+FROM SALESMAN S
+
+JOIN CUSTOMER C
+ON S.Salesman_id = C.Salesman_id
+
+GROUP BY S.Salesman_id, S.Name
+
+HAVING COUNT(C.Customer_id) > 1;
+
+
+/*========================================================
+                    QUERY 3
+List all salesman and indicate those who have
+and don’t have customers in their cities
+(Using UNION operation)
+========================================================*/
+
+SELECT
+S.Name,
+C.Cust_Name,
+S.City
+
+FROM SALESMAN S
+
+JOIN CUSTOMER C
+ON S.City = C.City
+
+
+UNION
+
+
+SELECT
+S.Name,
+'No Customer',
+S.City
+
+FROM SALESMAN S
+
+WHERE S.City NOT IN
+
+(
+    SELECT City
+    FROM CUSTOMER
+);
+
+
+/*========================================================
+                    QUERY 4
+Create a VIEW that finds the salesman who
+has the customer with the highest order
+of each day
+========================================================*/
+
+
+/*-------------------- CREATE VIEW --------------------*/
+
+CREATE VIEW HIGHEST_ORDER AS
+
+SELECT
+O.Ord_Date,
+S.Name,
+O.Purchase_Amt
+
+FROM ORDERS O
+
+JOIN SALESMAN S
+ON O.Salesman_id = S.Salesman_id
+
+WHERE (O.Ord_Date, O.Purchase_Amt) IN
+
+(
+    SELECT
+    Ord_Date,
+    MAX(Purchase_Amt)
+
+    FROM ORDERS
+
+    GROUP BY Ord_Date
+);
+
+
+/*-------------------- DISPLAY VIEW --------------------*/
+
+SELECT * FROM HIGHEST_ORDER;
+
+
+/*========================================================
+                    QUERY 5
+Demonstrate DELETE operation by removing
+salesman with id 1000.
+All his orders must also be deleted.
+========================================================*/
+
+DELETE FROM SALESMAN
+
+WHERE Salesman_id = 1000;
+
+
+/*========================================================
+                VERIFY DELETE OPERATION
+========================================================*/
+
+SELECT * FROM SALESMAN;
+
+SELECT * FROM CUSTOMER;
+
+SELECT * FROM ORDERS;
+
+/*========================================================
+            PROGRAM 3 – MOVIE DATABASE
+==========================================================
+
+Aim:
+Demonstrate the concepts of JOIN operations.
+
+Schema:
+ACTOR(Act_id, Act_Name, Act_Gender)
+
+DIRECTOR(Dir_id, Dir_Name, Dir_Phone)
+
+MOVIES(Mov_id, Mov_Title, Mov_Year,
+Mov_Lang, Dir_id)
+
+MOVIE_CAST(Act_id, Mov_id, Role)
+
+RATING(Mov_id, Rev_Stars)
+
+========================================================*/
+
+
+/*========================================================
+                    STEP 1
+                CREATE DATABASE
+========================================================*/
+
+CREATE DATABASE MovieDB;
+
+USE MovieDB;
+
+
+/*========================================================
+                    STEP 2
+                CREATE TABLES
+========================================================*/
+
+
+/*-------------------- ACTOR --------------------*/
+
+CREATE TABLE ACTOR
+(
+    Act_id INT PRIMARY KEY,
+    Act_Name VARCHAR(50),
+    Act_Gender VARCHAR(10)
+);
+
+
+/*-------------------- DIRECTOR --------------------*/
+
+CREATE TABLE DIRECTOR
+(
+    Dir_id INT PRIMARY KEY,
+    Dir_Name VARCHAR(50),
+    Dir_Phone BIGINT
+);
+
+
+/*-------------------- MOVIES --------------------*/
+
+CREATE TABLE MOVIES
+(
+    Mov_id INT PRIMARY KEY,
+    Mov_Title VARCHAR(50),
+    Mov_Year INT,
+    Mov_Lang VARCHAR(20),
+    Dir_id INT,
+
+    FOREIGN KEY (Dir_id)
+    REFERENCES DIRECTOR(Dir_id)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- MOVIE_CAST --------------------*/
+
+CREATE TABLE MOVIE_CAST
+(
+    Act_id INT,
+    Mov_id INT,
+    Role VARCHAR(50),
+
+    FOREIGN KEY (Act_id)
+    REFERENCES ACTOR(Act_id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (Mov_id)
+    REFERENCES MOVIES(Mov_id)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- RATING --------------------*/
+
+CREATE TABLE RATING
+(
+    Mov_id INT,
+    Rev_Stars INT,
+
+    FOREIGN KEY (Mov_id)
+    REFERENCES MOVIES(Mov_id)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+                    STEP 3
+                INSERT RECORDS
+        (MINIMUM 5 RECORDS IN EACH TABLE)
+========================================================*/
+
+
+/*-------------------- ACTOR --------------------*/
+
+INSERT INTO ACTOR VALUES
+(1,'Tom','Male');
+
+INSERT INTO ACTOR VALUES
+(2,'Emma','Female');
+
+INSERT INTO ACTOR VALUES
+(3,'Chris','Male');
+
+INSERT INTO ACTOR VALUES
+(4,'Scarlett','Female');
+
+INSERT INTO ACTOR VALUES
+(5,'Robert','Male');
+
+
+/*-------------------- DIRECTOR --------------------*/
+
+INSERT INTO DIRECTOR VALUES
+(101,'Hitchcock',9876543210);
+
+INSERT INTO DIRECTOR VALUES
+(102,'Steven Spielberg',9123456780);
+
+INSERT INTO DIRECTOR VALUES
+(103,'James Cameron',9988776655);
+
+INSERT INTO DIRECTOR VALUES
+(104,'Christopher Nolan',9871234567);
+
+INSERT INTO DIRECTOR VALUES
+(105,'Rajamouli',9871112223);
+
+
+/*-------------------- MOVIES --------------------*/
+
+INSERT INTO MOVIES VALUES
+(201,'Psycho',1998,'English',101);
+
+INSERT INTO MOVIES VALUES
+(202,'Jurassic Park',2018,'English',102);
+
+INSERT INTO MOVIES VALUES
+(203,'Titanic',1997,'English',103);
+
+INSERT INTO MOVIES VALUES
+(204,'Inception',2016,'English',104);
+
+INSERT INTO MOVIES VALUES
+(205,'RRR',2022,'Telugu',105);
+
+
+/*-------------------- MOVIE_CAST --------------------*/
+
+INSERT INTO MOVIE_CAST VALUES
+(1,201,'Hero');
+
+INSERT INTO MOVIE_CAST VALUES
+(1,202,'Friend');
+
+INSERT INTO MOVIE_CAST VALUES
+(2,202,'Heroine');
+
+INSERT INTO MOVIE_CAST VALUES
+(2,204,'Mother');
+
+INSERT INTO MOVIE_CAST VALUES
+(3,203,'Hero');
+
+INSERT INTO MOVIE_CAST VALUES
+(3,204,'Scientist');
+
+INSERT INTO MOVIE_CAST VALUES
+(4,204,'Sister');
+
+INSERT INTO MOVIE_CAST VALUES
+(5,205,'Commander');
+
+
+/*-------------------- RATING --------------------*/
+
+INSERT INTO RATING VALUES
+(201,4);
+
+INSERT INTO RATING VALUES
+(202,5);
+
+INSERT INTO RATING VALUES
+(203,3);
+
+INSERT INTO RATING VALUES
+(204,4);
+
+INSERT INTO RATING VALUES
+(205,5);
+
+
+/*========================================================
+                DISPLAY TABLE CONTENTS
+========================================================*/
+
+SELECT * FROM ACTOR;
+
+SELECT * FROM DIRECTOR;
+
+SELECT * FROM MOVIES;
+
+SELECT * FROM MOVIE_CAST;
+
+SELECT * FROM RATING;
+
+
+/*========================================================
+                    QUERY 1
+List titles of all movies directed by Hitchcock
+========================================================*/
+
+SELECT M.Mov_Title
+
+FROM MOVIES M
+
+JOIN DIRECTOR D
+ON M.Dir_id = D.Dir_id
+
+WHERE D.Dir_Name = 'Hitchcock';
+
+
+/*========================================================
+                    QUERY 2
+Find movie names where one or more actors
+acted in two or more movies
+========================================================*/
+
+SELECT DISTINCT M.Mov_Title
+
+FROM MOVIES M
+
+JOIN MOVIE_CAST MC
+ON M.Mov_id = MC.Mov_id
+
+WHERE MC.Act_id IN
+
+(
+    SELECT Act_id
+
+    FROM MOVIE_CAST
+
+    GROUP BY Act_id
+
+    HAVING COUNT(Mov_id) >= 2
+);
+
+
+/*========================================================
+                    QUERY 3
+List all actors who acted in a movie before 2000
+and also in a movie after 2015
+(Using JOIN operation)
+========================================================*/
+
+SELECT DISTINCT A.Act_Name
+
+FROM ACTOR A
+
+JOIN MOVIE_CAST MC1
+ON A.Act_id = MC1.Act_id
+
+JOIN MOVIES M1
+ON MC1.Mov_id = M1.Mov_id
+
+JOIN MOVIE_CAST MC2
+ON A.Act_id = MC2.Act_id
+
+JOIN MOVIES M2
+ON MC2.Mov_id = M2.Mov_id
+
+WHERE M1.Mov_Year < 2000
+
+AND M2.Mov_Year > 2015;
+
+
+/*========================================================
+                    QUERY 4
+Find movie title and highest stars received
+Sort result by movie title
+========================================================*/
+
+SELECT
+M.Mov_Title,
+MAX(R.Rev_Stars) AS Highest_Stars
+
+FROM MOVIES M
+
+JOIN RATING R
+ON M.Mov_id = R.Mov_id
+
+GROUP BY M.Mov_Title
+
+ORDER BY M.Mov_Title;
+
+
+/*========================================================
+                    QUERY 5
+Update rating of movies directed by
+Steven Spielberg to 5
+========================================================*/
+
+UPDATE RATING
+
+SET Rev_Stars = 5
+
+WHERE Mov_id IN
+
+(
+    SELECT M.Mov_id
+
+    FROM MOVIES M
+
+    JOIN DIRECTOR D
+    ON M.Dir_id = D.Dir_id
+
+    WHERE D.Dir_Name = 'Steven Spielberg'
+);
+
+
+/*========================================================
+            VERIFY UPDATED RATINGS
+========================================================*/
+
+SELECT * FROM RATING;
+
+/*========================================================
+            PROGRAM 4 – COLLEGE DATABASE
+==========================================================
+
+Aim:
+Introduce concepts of PLSQL and usage on the table.
+
+Schema:
+STUDENT(USN, SName, Address, Phone, Gender)
+
+SEMSEC(SSID, Sem, Sec)
+
+CLASS(USN, SSID)
+
+COURSE(Subcode, Title, Sem, Credits)
+
+IAMARKS(USN, Subcode, SSID,
+Test1, Test2, Test3, FinalIA)
+
+========================================================*/
+
+
+/*========================================================
+                    STEP 1
+                CREATE DATABASE
+========================================================*/
+
+CREATE DATABASE CollegeDB;
+
+USE CollegeDB;
+
+
+/*========================================================
+                    STEP 2
+                CREATE TABLES
+========================================================*/
+
+
+/*-------------------- STUDENT --------------------*/
+
+CREATE TABLE STUDENT
+(
+    USN VARCHAR(20) PRIMARY KEY,
+    SName VARCHAR(50),
+    Address VARCHAR(100),
+    Phone BIGINT,
+    Gender VARCHAR(10)
+);
+
+
+/*-------------------- SEMSEC --------------------*/
+
+CREATE TABLE SEMSEC
+(
+    SSID INT PRIMARY KEY,
+    Sem INT,
+    Sec CHAR(1)
+);
+
+
+/*-------------------- CLASS --------------------*/
+
+CREATE TABLE CLASS
+(
+    USN VARCHAR(20),
+    SSID INT,
+
+    FOREIGN KEY (USN)
+    REFERENCES STUDENT(USN)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (SSID)
+    REFERENCES SEMSEC(SSID)
+    ON DELETE CASCADE
+);
+
+
+/*-------------------- COURSE --------------------*/
+
+CREATE TABLE COURSE
+(
+    Subcode VARCHAR(10) PRIMARY KEY,
+    Title VARCHAR(50),
+    Sem INT,
+    Credits INT
+);
+
+
+/*-------------------- IAMARKS --------------------*/
+
+CREATE TABLE IAMARKS
+(
+    USN VARCHAR(20),
+    Subcode VARCHAR(10),
+    SSID INT,
+    Test1 INT,
+    Test2 INT,
+    Test3 INT,
+    FinalIA INT,
+
+    FOREIGN KEY (USN)
+    REFERENCES STUDENT(USN)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (Subcode)
+    REFERENCES COURSE(Subcode)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (SSID)
+    REFERENCES SEMSEC(SSID)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+                    STEP 3
+                INSERT RECORDS
+        (MINIMUM 5 RECORDS IN EACH TABLE)
+========================================================*/
+
+
+/*-------------------- STUDENT --------------------*/
+
+INSERT INTO STUDENT VALUES
+('1BI15CS101','Ravi','Bangalore',9876543210,'Male');
+
+INSERT INTO STUDENT VALUES
+('1BI15CS102','Sneha','Mysore',9123456780,'Female');
+
+INSERT INTO STUDENT VALUES
+('1BI15CS103','Arun','Chennai',9988776655,'Male');
+
+INSERT INTO STUDENT VALUES
+('1BI15CS104','Divya','Hyderabad',9871112223,'Female');
+
+INSERT INTO STUDENT VALUES
+('1BI15CS105','Kiran','Delhi',9873334445,'Male');
+
+
+/*-------------------- SEMSEC --------------------*/
+
+INSERT INTO SEMSEC VALUES
+(1,4,'C');
+
+INSERT INTO SEMSEC VALUES
+(2,8,'A');
+
+INSERT INTO SEMSEC VALUES
+(3,8,'B');
+
+INSERT INTO SEMSEC VALUES
+(4,8,'C');
+
+INSERT INTO SEMSEC VALUES
+(5,6,'A');
+
+
+/*-------------------- CLASS --------------------*/
+
+INSERT INTO CLASS VALUES
+('1BI15CS101',1);
+
+INSERT INTO CLASS VALUES
+('1BI15CS102',2);
+
+INSERT INTO CLASS VALUES
+('1BI15CS103',3);
+
+INSERT INTO CLASS VALUES
+('1BI15CS104',4);
+
+INSERT INTO CLASS VALUES
+('1BI15CS105',5);
+
+
+/*-------------------- COURSE --------------------*/
+
+INSERT INTO COURSE VALUES
+('CS401','DBMS',4,4);
+
+INSERT INTO COURSE VALUES
+('CS801','Machine Learning',8,4);
+
+INSERT INTO COURSE VALUES
+('CS802','Cloud Computing',8,4);
+
+INSERT INTO COURSE VALUES
+('CS803','Big Data',8,4);
+
+INSERT INTO COURSE VALUES
+('CS601','Operating System',6,4);
+
+
+/*-------------------- IAMARKS --------------------*/
+
+INSERT INTO IAMARKS VALUES
+('1BI15CS101','CS401',1,18,20,19,NULL);
+
+INSERT INTO IAMARKS VALUES
+('1BI15CS102','CS801',2,15,14,16,NULL);
+
+INSERT INTO IAMARKS VALUES
+('1BI15CS103','CS802',3,10,12,11,NULL);
+
+INSERT INTO IAMARKS VALUES
+('1BI15CS104','CS803',4,19,18,20,NULL);
+
+INSERT INTO IAMARKS VALUES
+('1BI15CS105','CS601',5,13,15,14,NULL);
+
+
+/*========================================================
+                DISPLAY TABLE CONTENTS
+========================================================*/
+
+SELECT * FROM STUDENT;
+
+SELECT * FROM SEMSEC;
+
+SELECT * FROM CLASS;
+
+SELECT * FROM COURSE;
+
+SELECT * FROM IAMARKS;
+
+
+/*========================================================
+                    QUERY 1
+List all student details studying in
+4th semester C section
+========================================================*/
+
+SELECT S.*
+
+FROM STUDENT S
+
+JOIN CLASS C
+ON S.USN = C.USN
+
+JOIN SEMSEC SS
+ON C.SSID = SS.SSID
+
+WHERE SS.Sem = 4
+
+AND SS.Sec = 'C';
+
+
+/*========================================================
+                    QUERY 2
+Compute total number of male and female
+students in each semester and section
+========================================================*/
+
+SELECT
+SS.Sem,
+SS.Sec,
+S.Gender,
+COUNT(*) AS Total_Students
+
+FROM STUDENT S
+
+JOIN CLASS C
+ON S.USN = C.USN
+
+JOIN SEMSEC SS
+ON C.SSID = SS.SSID
+
+GROUP BY SS.Sem, SS.Sec, S.Gender;
+
+
+/*========================================================
+                    QUERY 3
+Create VIEW for Test1 marks of student
+USN '1BI15CS101' in all courses
+========================================================*/
+
+
+/*-------------------- CREATE VIEW --------------------*/
+
+CREATE VIEW TEST1_MARKS AS
+
+SELECT
+I.Subcode,
+C.Title,
+I.Test1
+
+FROM IAMARKS I
+
+JOIN COURSE C
+ON I.Subcode = C.Subcode
+
+WHERE I.USN = '1BI15CS101';
+
+
+/*-------------------- DISPLAY VIEW --------------------*/
+
+SELECT * FROM TEST1_MARKS;
+
+
+/*========================================================
+                    QUERY 4
+Calculate FinalIA using average of
+best two test marks
+========================================================*/
+
+UPDATE IAMARKS
+
+SET FinalIA = ROUND
+(
+(
+    (Test1 + Test2 + Test3)
+    - LEAST(Test1, Test2, Test3)
+) / 2
+);
+
+
+/*========================================================
+            DISPLAY UPDATED IAMARKS
+========================================================*/
+
+SELECT * FROM IAMARKS;
+
+
+/*========================================================
+                    QUERY 5
+Categorize students based on FinalIA
+Only for 8th semester A, B and C sections
+========================================================*/
+
+SELECT
+S.USN,
+S.SName,
+SS.Sem,
+SS.Sec,
+I.FinalIA,
+
+CASE
+
+    WHEN I.FinalIA BETWEEN 17 AND 20
+    THEN 'Outstanding'
+
+    WHEN I.FinalIA BETWEEN 12 AND 16
+    THEN 'Average'
+
+    ELSE 'Weak'
+
+END AS Category
+
+FROM STUDENT S
+
+JOIN CLASS C
+ON S.USN = C.USN
+
+JOIN SEMSEC SS
+ON C.SSID = SS.SSID
+
+JOIN IAMARKS I
+ON S.USN = I.USN
+
+WHERE SS.Sem = 8
+
+AND SS.Sec IN ('A','B','C');
+
+
+/*========================================================
+            PROGRAM 5 – COMPANY DATABASE
+==========================================================
+
+Aim:
+Demonstrate the core concepts on nested and
+correlated queries using EXISTS and NOT EXISTS.
+
+Schema:
+EMPLOYEE(SSN, Name, Address, Sex,
+Salary, SuperSSN, DNo)
+
+DEPARTMENT(DNo, DName,
+MgrSSN, MgrStartDate)
+
+DLOCATION(DNo, DLoc)
+
+PROJECT(PNo, PName,
+PLocation, DNo)
+
+WORKS_ON(SSN, PNo, Hours)
+
+========================================================*/
+
+
+/*========================================================
+                    STEP 1
+                CREATE DATABASE
+========================================================*/
+
+CREATE DATABASE CompanyDB;
+
+USE CompanyDB;
+
+
+/*========================================================
+                    STEP 2
+                CREATE TABLES
+========================================================*/
+
+
+/*========================================================
+            CREATE DEPARTMENT TABLE
+========================================================*/
+
+CREATE TABLE DEPARTMENT
+(
+    DNo INT PRIMARY KEY,
+    DName VARCHAR(50),
+    MgrSSN INT,
+    MgrStartDate DATE
+);
+
+
+/*========================================================
+            CREATE EMPLOYEE TABLE
+========================================================*/
+
+CREATE TABLE EMPLOYEE
+(
+    SSN INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Address VARCHAR(100),
+    Sex VARCHAR(10),
+    Salary INT,
+    SuperSSN INT,
+    DNo INT,
+
+    FOREIGN KEY (DNo)
+    REFERENCES DEPARTMENT(DNo)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+            ADD SELF REFERENCING FOREIGN KEY
+========================================================*/
+
+ALTER TABLE EMPLOYEE
+
+ADD CONSTRAINT FK_SUPERSSN
+
+FOREIGN KEY (SuperSSN)
+REFERENCES EMPLOYEE(SSN)
+ON DELETE CASCADE;
+
+
+/*========================================================
+            CREATE DLOCATION TABLE
+========================================================*/
+
+CREATE TABLE DLOCATION
+(
+    DNo INT,
+    DLoc VARCHAR(50),
+
+    FOREIGN KEY (DNo)
+    REFERENCES DEPARTMENT(DNo)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+            CREATE PROJECT TABLE
+========================================================*/
+
+CREATE TABLE PROJECT
+(
+    PNo INT PRIMARY KEY,
+    PName VARCHAR(50),
+    PLocation VARCHAR(50),
+    DNo INT,
+
+    FOREIGN KEY (DNo)
+    REFERENCES DEPARTMENT(DNo)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+            CREATE WORKS_ON TABLE
+========================================================*/
+
+CREATE TABLE WORKS_ON
+(
+    SSN INT,
+    PNo INT,
+    Hours INT,
+
+    FOREIGN KEY (SSN)
+    REFERENCES EMPLOYEE(SSN)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (PNo)
+    REFERENCES PROJECT(PNo)
+    ON DELETE CASCADE
+);
+
+
+/*========================================================
+                    STEP 3
+                INSERT RECORDS
+        (MINIMUM 5 RECORDS IN EACH TABLE)
+========================================================*/
+
+
+/*========================================================
+            INSERT INTO DEPARTMENT
+========================================================*/
+
+INSERT INTO DEPARTMENT VALUES
+(1,'Accounts',101,'2020-01-01');
+
+INSERT INTO DEPARTMENT VALUES
+(2,'HR',102,'2020-02-01');
+
+INSERT INTO DEPARTMENT VALUES
+(3,'Sales',103,'2020-03-01');
+
+INSERT INTO DEPARTMENT VALUES
+(4,'Testing',104,'2020-04-01');
+
+INSERT INTO DEPARTMENT VALUES
+(5,'Research',105,'2020-05-01');
+
+
+/*========================================================
+            INSERT INTO EMPLOYEE
+========================================================*/
+
+INSERT INTO EMPLOYEE VALUES
+(101,'John Scott','Bangalore','Male',700000,NULL,1);
+
+INSERT INTO EMPLOYEE VALUES
+(102,'David','Mysore','Male',800000,NULL,2);
+
+INSERT INTO EMPLOYEE VALUES
+(103,'Alice','Chennai','Female',650000,NULL,3);
+
+INSERT INTO EMPLOYEE VALUES
+(104,'Bob','Delhi','Male',500000,NULL,4);
+
+INSERT INTO EMPLOYEE VALUES
+(105,'Kevin Scott','Mumbai','Male',620000,NULL,5);
+
+INSERT INTO EMPLOYEE VALUES
+(106,'Riya','Pune','Female',610000,101,5);
+
+INSERT INTO EMPLOYEE VALUES
+(107,'Kiran','Hyderabad','Male',750000,102,5);
+
+INSERT INTO EMPLOYEE VALUES
+(108,'Rohan','Bangalore','Male',700000,101,5);
+
+INSERT INTO EMPLOYEE VALUES
+(109,'Meena','Mysore','Female',720000,101,5);
+
+INSERT INTO EMPLOYEE VALUES
+(110,'Ajay','Delhi','Male',710000,102,5);
+
+INSERT INTO EMPLOYEE VALUES
+(111,'Neha','Pune','Female',730000,102,5);
+
+
+/*========================================================
+            INSERT INTO DLOCATION
+========================================================*/
+
+INSERT INTO DLOCATION VALUES
+(1,'Bangalore');
+
+INSERT INTO DLOCATION VALUES
+(2,'Mysore');
+
+INSERT INTO DLOCATION VALUES
+(3,'Chennai');
+
+INSERT INTO DLOCATION VALUES
+(4,'Delhi');
+
+INSERT INTO DLOCATION VALUES
+(5,'Mumbai');
+
+
+/*========================================================
+            INSERT INTO PROJECT
+========================================================*/
+
+INSERT INTO PROJECT VALUES
+(201,'IoT','Bangalore',5);
+
+INSERT INTO PROJECT VALUES
+(202,'Cloud','Mysore',1);
+
+INSERT INTO PROJECT VALUES
+(203,'AI','Delhi',5);
+
+INSERT INTO PROJECT VALUES
+(204,'TestingTool','Chennai',4);
+
+INSERT INTO PROJECT VALUES
+(205,'Payroll','Mumbai',1);
+
+
+/*========================================================
+            INSERT INTO WORKS_ON
+========================================================*/
+
+INSERT INTO WORKS_ON VALUES
+(101,202,10);
+
+INSERT INTO WORKS_ON VALUES
+(104,201,20);
+
+INSERT INTO WORKS_ON VALUES
+(105,201,15);
+
+INSERT INTO WORKS_ON VALUES
+(106,203,25);
+
+INSERT INTO WORKS_ON VALUES
+(107,201,30);
+
+INSERT INTO WORKS_ON VALUES
+(107,203,15);
+
+INSERT INTO WORKS_ON VALUES
+(108,201,20);
+
+INSERT INTO WORKS_ON VALUES
+(109,203,18);
+
+INSERT INTO WORKS_ON VALUES
+(110,201,22);
+
+INSERT INTO WORKS_ON VALUES
+(111,203,24);
+
+
+/*========================================================
+                DISPLAY TABLE CONTENTS
+========================================================*/
+
+SELECT * FROM EMPLOYEE;
+
+SELECT * FROM DEPARTMENT;
+
+SELECT * FROM DLOCATION;
+
+SELECT * FROM PROJECT;
+
+SELECT * FROM WORKS_ON;
+
+
+/*========================================================
+                    QUERY 1
+List all project numbers for projects that
+involve an employee whose last name is Scott
+========================================================*/
+
+SELECT DISTINCT P.PNo
+
+FROM PROJECT P
+
+JOIN WORKS_ON W
+ON P.PNo = W.PNo
+
+JOIN EMPLOYEE E
+ON W.SSN = E.SSN
+
+WHERE E.Name LIKE '%Scott%'
+
+
+UNION
+
+
+SELECT DISTINCT P.PNo
+
+FROM PROJECT P
+
+JOIN DEPARTMENT D
+ON P.DNo = D.DNo
+
+JOIN EMPLOYEE E
+ON D.MgrSSN = E.SSN
+
+WHERE E.Name LIKE '%Scott%';
+
+
+/*========================================================
+                    QUERY 2
+Show salaries after 10 percent raise for
+employees working on IoT project
+========================================================*/
+
+SELECT
+E.Name,
+E.Salary AS Old_Salary,
+E.Salary * 1.10 AS New_Salary
+
+FROM EMPLOYEE E
+
+JOIN WORKS_ON W
+ON E.SSN = W.SSN
+
+JOIN PROJECT P
+ON W.PNo = P.PNo
+
+WHERE P.PName = 'IoT';
+
+
+/*========================================================
+                    QUERY 3
+Find sum, maximum, minimum and average
+salary in Accounts department
+========================================================*/
+
+SELECT
+SUM(E.Salary) AS Total_Salary,
+MAX(E.Salary) AS Maximum_Salary,
+MIN(E.Salary) AS Minimum_Salary,
+AVG(E.Salary) AS Average_Salary
+
+FROM EMPLOYEE E
+
+JOIN DEPARTMENT D
+ON E.DNo = D.DNo
+
+WHERE D.DName = 'Accounts';
+
+
+/*========================================================
+                    QUERY 4
+Retrieve employees who work on all projects
+controlled by department number 5
+(Using NOT EXISTS)
+========================================================*/
+
+SELECT E.Name
+
+FROM EMPLOYEE E
+
+WHERE NOT EXISTS
+
+(
+    SELECT P.PNo
+
+    FROM PROJECT P
+
+    WHERE P.DNo = 5
+
+    AND NOT EXISTS
+
+    (
+        SELECT *
+
+        FROM WORKS_ON W
+
+        WHERE W.SSN = E.SSN
+
+        AND W.PNo = P.PNo
+    )
+);
+
+
+/*========================================================
+                    QUERY 5
+Departments having more than five employees
+earning more than Rs.600000
+========================================================*/
+
+SELECT
+DNo,
+COUNT(*) AS Employee_Count
+
+FROM EMPLOYEE
+
+WHERE Salary > 600000
+
+GROUP BY DNo
+
+HAVING COUNT(*) > 5;
+
+
+
+
+
+
+
+
+
